@@ -2,7 +2,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:xany/services/javascriptChannel.dart';
+import 'package:xany/utils/javascriptChannel.dart';
 import 'package:xany/services/weibo.dart' as weibo;
 
 class MyHomePage extends StatefulWidget {
@@ -17,6 +17,8 @@ class _MyHomePageState extends State<MyHomePage> {
   final Completer<WebViewController> _controller =
       Completer<WebViewController>();
 
+  final javascriptChannel = MyJavascriptChannel(name: 'coovjs');
+
   @override
   Widget build(BuildContext context) {
     return WebView(
@@ -25,7 +27,8 @@ class _MyHomePageState extends State<MyHomePage> {
       javascriptMode: JavascriptMode.unrestricted,
       javascriptChannels: <JavascriptChannel>[javascriptChannel].toSet(),
       onPageFinished: (url) {
-        _controller.future.then(weibo.initWeiboService);
+        _controller.future.then((webViewController) =>
+            weibo.initWeiboService(webViewController, javascriptChannel));
       },
       onWebViewCreated: (WebViewController webViewController) {
         _controller.complete(webViewController);
