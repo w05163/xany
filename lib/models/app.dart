@@ -7,8 +7,10 @@ import 'home.dart';
 MultiProvider registerModels(Widget child) {
   return MultiProvider(
     providers: [
-      ChangeNotifierProvider<CommonModel>(create: (_) => CommonModel()),
-      ChangeNotifierProvider<HomeModel>(create: (_) => HomeModel()),
+      ChangeNotifierProvider<CommonModel>(
+          create: (_) => CommonModel(), lazy: false),
+      ChangeNotifierProvider<HomeModel>(
+          create: (_) => HomeModel(), lazy: false),
     ],
     child: child,
   );
