@@ -1,11 +1,13 @@
 typedef void RemoveListener();
 
+typedef void Handler<T>(T data);
+
 abstract class __EventEmitter__ {
   Map<String, List<Function>> events;
 
-  RemoveListener on(String event, Function handler([dynamic data]));
+  RemoveListener on<T>(String event, Handler<T> handler);
 
-  void once(String event, Function handler([dynamic data]));
+  void once<T>(String event, Handler<T> handler);
 
   void off(String event);
 
@@ -15,23 +17,16 @@ abstract class __EventEmitter__ {
 }
 
 class EventEmitter extends __EventEmitter__ {
-  /**
-   * storage for the event handler
-   */
+  ///storage for the event handler
   Map<String, List<Function>> _events = new Map();
 
-  /**
-   * proxy the private property, make it readonly. cannot modify from outside
-   */
+  ///proxy the private property, make it readonly. cannot modify from outside
   Map<String, List<Function>> get events => _events;
 
   EventEmitter() {}
 
-  /**
-   * listen the event
-   * it will return a function to cancel this listening
-   */
-  RemoveListener on(String event, void handler(dynamic data)) {
+  ///listen the event,it will return a function to cancel this listening
+  RemoveListener on<T>(String event, Handler<T> handler) {
     final List eventContainer =
         _events.putIfAbsent(event, () => new List<Function>());
     eventContainer.add(handler);
@@ -42,29 +37,29 @@ class EventEmitter extends __EventEmitter__ {
     return offThisListener;
   }
 
-  /**
-   * listen the event once
-   * it will remove listening once it trigger
-   */
-  void once(String event, void handler(dynamic data)) {
+  ///listen the event once,it will remove listening once it trigger
+  RemoveListener once<T>(String event, Handler<T> handler) {
     final List eventContainer =
         _events.putIfAbsent(event, () => new List<Function>());
-    eventContainer.add((dynamic data) {
+    void handlerPox(dynamic data) {
       handler(data);
       this.off(event);
-    });
+    }
+
+    eventContainer.add(handlerPox);
+    void offThisListener() {
+      eventContainer.remove(handlerPox);
+    }
+
+    return offThisListener;
   }
 
-  /**
-   * remove a event listening
-   */
+  /// remove a event listening
   void off(String event) {
     _events.remove(event);
   }
 
-  /**
-   * emit a event with a optional data
-   */
+  ///emit a event with a optional data
   void emit(String event, [dynamic data]) {
     final List eventContainer = _events[event] ?? [];
     eventContainer.forEach((handler) {
@@ -72,9 +67,7 @@ class EventEmitter extends __EventEmitter__ {
     });
   }
 
-  /**
-   * clear the all listening
-   */
+  ///clear the all listening
   void clear() {
     _events.clear();
   }
