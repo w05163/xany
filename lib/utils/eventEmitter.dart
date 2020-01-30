@@ -29,10 +29,12 @@ class EventEmitter extends __EventEmitter__ {
   RemoveListener on<T>(String event, Handler<T> handler) {
     final List eventContainer =
         _events.putIfAbsent(event, () => new List<Function>());
-    eventContainer.add(handler);
+
     void offThisListener() {
       eventContainer.remove(handler);
     }
+
+    if (eventContainer.indexOf(handler) == -1) eventContainer.add(handler);
 
     return offThisListener;
   }

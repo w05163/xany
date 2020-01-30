@@ -8,6 +8,7 @@ import 'package:xany/utils/javascriptChannel.dart';
 import 'package:xany/services/weibo.dart' as weibo;
 import 'package:xany/models/baseModel.dart';
 import 'package:xany/models/common.dart';
+import 'package:xany/models/home.dart';
 
 class InitPage extends StatefulWidget {
   @override
@@ -38,7 +39,7 @@ class _InitPageState extends State<InitPage> {
   void localInit(Value<CommonModel, bool> v) {
     final common = Provider.of<CommonModel>(context, listen: false);
     if (common.login)
-      Navigator.pushNamed(context, '/home');
+      this.pushHome();
     else
       _controller.future.then((c) => c.loadUrl(loginUrl));
   }
@@ -46,9 +47,15 @@ class _InitPageState extends State<InitPage> {
   ///登录完成
   void loginSuccess(Value<CommonModel, bool> v) {
     if (v.value) {
-      Navigator.pushNamed(context, '/home');
+      this.pushHome();
       _controller.future.then((c) => c.loadUrl(icoUrl));
     }
+  }
+
+  pushHome() async {
+    Navigator.pushNamed(context, '/home');
+    final home = Provider.of<HomeModel>(context, listen: false);
+    home.getNextPage();
   }
 
   bool isLoginSuccessUrl(url) {
@@ -65,8 +72,16 @@ class _InitPageState extends State<InitPage> {
     return NavigationDecision.navigate;
   }
 
-  void onPageFinished(url) async {
+  void onPageStarted(String url) {
+    weibo.resetInit();
+  }
+
+  void onPageFinished(url) {
     print('加载完成：$url');
+    if (url == icoUrl) {
+      _controller.future
+          .then((c) => weibo.initWeiboService(c, javascriptChannel));
+    }
   }
 
   @override
@@ -77,9 +92,9 @@ class _InitPageState extends State<InitPage> {
       javascriptMode: JavascriptMode.unrestricted,
       javascriptChannels: <JavascriptChannel>[javascriptChannel].toSet(),
       onPageFinished: onPageFinished,
+      onPageStarted: onPageStarted,
       onWebViewCreated: (WebViewController webViewController) {
         _controller.complete(webViewController);
-        weibo.initWeiboService(webViewController, javascriptChannel);
       },
       navigationDelegate: navigationDelegate,
     );

@@ -14,7 +14,7 @@ class MyJavascriptChannel extends JavascriptChannel {
   JavascriptMessageHandler onMessageReceived;
 
   _onMessageReceived(JavascriptMessage msg) {
-    print('接收到webview消息' + msg.message);
+    // print('接收到webview消息' + msg.message);
     Map msgData = json.decode(msg.message);
     // 触发事件
     _eventEmitter.emit(msgData['type'], msgData['data']);

@@ -1,10 +1,16 @@
 // 微博主页model
 import 'baseModel.dart';
+import 'package:xany/services/weibo.dart' as weibo;
 
 class HomeModel extends BaseModel {
-  int _count = 0;
+  List weibos = [];
 
-  void increment() {
-    _count++;
+  void getNextPage() async {
+    final data = await weibo.getWeibo();
+    // print(data);
+    //获取微博
+    setState(() {
+      weibos.addAll(data['data']['statuses']);
+    });
   }
 }

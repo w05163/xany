@@ -2,28 +2,31 @@
 // 由于微博api经过webview请求，所以需要先初始化
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:xany/utils/javascriptChannel.dart';
 
-bool _init = false;
 WebViewController _webViewController;
 MyJavascriptChannel _javascriptChannel;
 
-Map<int, Completer> completerMap = Map();
+int _id = 100;
+Map<int, Completer> _completerMap = {0: Completer()};
+
+int getId() {
+  return _id++;
+}
 
 void _receivedApiMessage(data) {
   final response = data['response'];
   final id = data['id'];
-  final completer = completerMap[id];
+  final completer = _completerMap[id];
   if (completer == null) return;
   completer.complete(response);
-  completerMap.remove(id);
-  print(json.encode(completerMap));
+  _completerMap.remove(id);
+  print(json.encode(_completerMap));
 }
 
 Future _webviewFetch(String url, {options}) {
-  final id = Random().nextInt(10 ^ 16);
+  final id = getId();
   if (options == null) options = {};
   _webViewController.evaluateJavascript('''
     fetch('$url',${json.encode(options)})
@@ -35,20 +38,43 @@ Future _webviewFetch(String url, {options}) {
       }))
     });
   ''');
-  completerMap[id] = Completer();
-  return completerMap[id].future;
+  _completerMap[id] = Completer();
+  return _completerMap[id].future;
 }
 
-void initWeiboService(
+Future _coovCall(String name, {Map data}) async {
+  await _completerMap[0].future; // 等待init成功
+  final id = getId();
+  if (data == null) data = {};
+  _webViewController.evaluateJavascript('''
+    window.coov.postData($id, window.coov.$name(${json.encode(data)}));
+  ''');
+  _completerMap[id] = Completer();
+  return _completerMap[id].future;
+}
+
+void appendJS(String url) {
+  _webViewController.evaluateJavascript('''
+  var s = document.createElement('script');
+  s.src = '$url';
+  document.body.appendChild(s);
+  ''');
+}
+
+Future initWeiboService(
     WebViewController controller, MyJavascriptChannel javascriptChannel) {
-  if (_init) return;
   _webViewController = controller;
   _javascriptChannel = javascriptChannel;
   javascriptChannel.on('weiboApi', _receivedApiMessage);
-  _init = true;
+  appendJS('https://weibo-1252458005.cos.ap-guangzhou.myqcloud.com/weibo.js');
+  return _completerMap[0].future;
+}
+
+void resetInit() {
+  _completerMap[0] = Completer();
 }
 
 /// 获取微博
-Future getWeibo() {
-  return _webviewFetch('/feed/friends');
+Future getWeibo({Map data}) {
+  return _coovCall('getWeibos', data: data);
 }
