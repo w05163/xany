@@ -21,7 +21,7 @@ void _receivedApiMessage(data) {
   final completer = _completerMap[id];
   if (completer == null) return;
   completer.complete(response);
-  _completerMap.remove(id);
+  if (id >= 100) _completerMap.remove(id);
   print(json.encode(_completerMap));
 }
 
